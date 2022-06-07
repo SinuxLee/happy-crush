@@ -1,4 +1,4 @@
-import { CELL_TYPE, ANITIME, CELL_STATUS, GRID_HEIGHT } from "./ConstValue";
+import { CELL_TYPE, ANITIME, CELL_STATUS, GRID_HEIGHT } from './ConstValue';
 export default class CellModel {
     constructor() {
         this.type = null;
@@ -38,28 +38,28 @@ export default class CellModel {
     }
 
     moveToAndBack(pos) {
-        var srcPos = cc.v2(this.x, this.y);
+        let srcPos = cc.v2(this.x, this.y);
         this.cmd.push({
-            action: "moveTo",
+            action: 'moveTo',
             keepTime: ANITIME.TOUCH_MOVE,
             playTime: 0,
-            pos: pos
+            pos: pos,
         });
         this.cmd.push({
-            action: "moveTo",
+            action: 'moveTo',
             keepTime: ANITIME.TOUCH_MOVE,
             playTime: ANITIME.TOUCH_MOVE,
-            pos: srcPos
+            pos: srcPos,
         });
     }
 
     moveTo(pos, playTime) {
-        var srcPos = cc.v2(this.x, this.y); 
+        let srcPos = cc.v2(this.x, this.y);
         this.cmd.push({
-            action: "moveTo",
+            action: 'moveTo',
             keepTime: ANITIME.TOUCH_MOVE,
             playTime: playTime,
-            pos: pos
+            pos: pos,
         });
         this.x = pos.x;
         this.y = pos.y;
@@ -67,36 +67,33 @@ export default class CellModel {
 
     toDie(playTime) {
         this.cmd.push({
-            action: "toDie",
+            action: 'toDie',
             playTime: playTime,
-            keepTime: ANITIME.DIE
+            keepTime: ANITIME.DIE,
         });
         this.isDeath = true;
     }
 
     toShake(playTime) {
         this.cmd.push({
-            action: "toShake",
+            action: 'toShake',
             playTime: playTime,
-            keepTime: ANITIME.DIE_SHAKE
+            keepTime: ANITIME.DIE_SHAKE,
         });
     }
 
     setVisible(playTime, isVisible) {
         this.cmd.push({
-            action: "setVisible",
+            action: 'setVisible',
             playTime: playTime,
             keepTime: 0,
-            isVisible: isVisible
+            isVisible: isVisible,
         });
     }
 
-    moveToAndDie(pos) {
-
-    }
+    moveToAndDie(pos) {}
 
     isBird() {
         return this.type == CELL_TYPE.G;
     }
-
 }
