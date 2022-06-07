@@ -1,13 +1,13 @@
-export const CELL_TYPE = Object.freeze({
-    EMPTY: 0,
-    A: 1,
-    B: 2,
-    C: 3,
-    D: 4,
-    E: 5,
-    F: 6,
-    BIRD: 7,
-});
+export enum CELL_TYPE {
+    EMPTY = 0,
+    A = 1,
+    B = 2,
+    C = 3,
+    D = 4,
+    E = 5,
+    F = 6,
+    BIRD = 7,
+}
 
 export const CELL_BASENUM = 6;
 export const CELL_STATUS = Object.freeze({
