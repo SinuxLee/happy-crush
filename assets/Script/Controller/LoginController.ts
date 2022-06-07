@@ -23,6 +23,7 @@ export default class extends cc.Component{
         this.loadingBar.node.active = true;
         this.loginButton.node.active = false;
         this.loadingBar.progress = 0;
+
         let backup = cc.loader.onProgress;
         cc.loader.onProgress = (count, amount) => {
             this.loadingBar.progress = count / amount;
