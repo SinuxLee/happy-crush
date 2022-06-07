@@ -3,7 +3,6 @@ import {
     CELL_HEIGHT,
     GRID_PIXEL_WIDTH,
     GRID_PIXEL_HEIGHT,
-    ANITIME,
 } from '../Model/ConstValue';
 import AudioUtils from '../Utils/AudioUtils';
 
