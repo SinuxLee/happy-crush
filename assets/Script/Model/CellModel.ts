@@ -1,14 +1,18 @@
-import { CELL_TYPE, ANITIME, CELL_STATUS, GRID_HEIGHT } from './ConstValue';
+import { CELL_TYPE, ANITIME, CELL_STATUS } from './ConstValue';
 export default class CellModel {
+    private type;
+    private status;
+    private x: number = 1;
+    private y: number = 1;
+    private startX: number = 1;
+    private startY: number = 1;
+    private cmd = [];
+    private isDeath: boolean = false;
+    private objecCount: number = 0;
+
     constructor() {
         this.type = null;
         this.status = CELL_STATUS.COMMON;
-        this.x = 1;
-        this.y = 1;
-        this.startX = 1;
-        this.startY = 1;
-        this.cmd = [];
-        this.isDeath = false;
         this.objecCount = Math.floor(Math.random() * 1000);
     }
 
@@ -23,12 +27,12 @@ export default class CellModel {
     setEmpty() {
         this.type = CELL_TYPE.EMPTY;
     }
-    setXY(x, y) {
+    setXY(x: number, y: number) {
         this.x = x;
         this.y = y;
     }
 
-    setStartXY(x, y) {
+    setStartXY(x: number, y: number) {
         this.startX = x;
         this.startY = y;
     }
@@ -54,7 +58,6 @@ export default class CellModel {
     }
 
     moveTo(pos, playTime) {
-        let srcPos = cc.v2(this.x, this.y);
         this.cmd.push({
             action: 'moveTo',
             keepTime: ANITIME.TOUCH_MOVE,
@@ -90,8 +93,6 @@ export default class CellModel {
             isVisible: isVisible,
         });
     }
-
-    moveToAndDie(pos) {}
 
     isBird() {
         return this.type == CELL_TYPE.G;
