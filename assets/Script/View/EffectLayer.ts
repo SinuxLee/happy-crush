@@ -1,32 +1,27 @@
 import { CELL_WIDTH } from '../Model/ConstValue';
 import AudioUtils from '../Utils/AudioUtils';
+const { ccclass, property } = cc._decorator;
 
-cc.Class({
-    extends: cc.Component,
+@ccclass
+export default class extends cc.Component {
+    @property(cc.Prefab)
+    private bombWhite: cc.Prefab = null;
 
-    properties: {
-        bombWhite: {
-            default: null,
-            type: cc.Prefab,
-        },
-        crushEffect: {
-            default: null,
-            type: cc.Prefab,
-        },
-        audioUtils: {
-            type: AudioUtils,
-            default: null,
-        },
-    },
+    @property(cc.Prefab)
+    private crushEffect: cc.Prefab = null;
 
-    playEffects: function (effectQueue) {
+    @property(AudioUtils)
+    private audioUtils: AudioUtils = null;
+
+    playEffects(effectQueue) {
         if (!effectQueue || effectQueue.length <= 0) {
             return;
         }
+
         let soundMap = {}; //某一时刻，某一种声音是否播放过的标记，防止重复播放
-        effectQueue.forEach(function (cmd) {
+        effectQueue.forEach((cmd) => {
             let delayTime = cc.delayTime(cmd.playTime);
-            let callFunc = cc.callFunc(function () {
+            let callFunc = cc.callFunc(() => {
                 let instantEffect = null;
                 let animation = null;
                 if (cmd.action == 'crush') {
@@ -51,13 +46,14 @@ cc.Class({
                 instantEffect.parent = this.node;
                 animation.on(
                     'finished',
-                    function () {
+                    () => {
                         instantEffect.destroy();
                     },
                     this
                 );
             }, this);
+
             this.node.runAction(cc.sequence(delayTime, callFunc));
         }, this);
-    },
-});
+    }
+}
