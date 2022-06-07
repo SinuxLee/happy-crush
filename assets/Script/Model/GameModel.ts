@@ -10,13 +10,11 @@ import {
 } from './ConstValue';
 
 export default class GameModel {
-    constructor() {
-        this.cells = null;
-        this.cellBgs = null;
-        this.lastPos = cc.v2(-1, -1);
-        this.cellTypeNum = 5;
-        this.cellCreateType = []; // 升成种类只在这个数组里面查找
-    }
+    private cells: Array<Array<CellModel>> = null;
+    private cellBgs = null;
+    private lastPos:cc.Vec2 = cc.v2(-1, -1);
+    private cellTypeNum: number = 5;
+    private cellCreateType = []; // 升成种类只在这个数组里面查找
 
     init(cellTypeNum) {
         this.cells = [];
@@ -73,7 +71,7 @@ export default class GameModel {
      * @param recursive 是否递归查找
      * @returns {([]|string|*)[]}
      */
-    checkPoint(x, y, recursive) {
+    checkPoint(x: number, y: number, recursive: boolean = false) {
         let rowResult = this.checkWithDirection(x, y, [
             cc.v2(1, 0),
             cc.v2(-1, 0),

@@ -1,7 +1,5 @@
 import { CELL_TYPE, ANITIME, CELL_STATUS } from './ConstValue';
 export default class CellModel {
-    private type;
-    private status;
     private x: number = 1;
     private y: number = 1;
     private startX: number = 1;
@@ -9,6 +7,9 @@ export default class CellModel {
     private cmd = [];
     private isDeath: boolean = false;
     private objecCount: number = 0;
+    private status;
+
+    public type;
 
     constructor() {
         this.type = null;
