@@ -5,37 +5,34 @@ import {
     GRID_PIXEL_HEIGHT,
 } from '../Model/ConstValue';
 import AudioUtils from '../Utils/AudioUtils';
+const { ccclass, property } = cc._decorator;
 
-cc.Class({
-    extends: cc.Component,
+@ccclass
+export default class extends cc.Component{
 
-    properties: {
-        aniPre: {
-            default: [],
-            type: [cc.Prefab],
-        },
-        effectLayer: {
-            default: null,
-            type: cc.Node,
-        },
-        audioUtils: {
-            type: AudioUtils,
-            default: null,
-        },
-    },
+    @property([cc.Prefab])
+    private aniPre: cc.Prefab[] = [];
 
-    onLoad: function () {
+    @property(cc.Node)
+    private effectLayer: cc.Node = null;
+
+    @property(AudioUtils)
+    private audioUtils: AudioUtils = null;
+
+    private isCanMove = true;
+    private isInPlayAni = false; // 是否在播放中
+    private lastTouchPos: cc.Vec2 = null;
+
+    onLoad () {
         this.setListener();
-        this.lastTouchPos = cc.Vec2(-1, -1);
-        this.isCanMove = true;
-        this.isInPlayAni = false; // 是否在播放中
-    },
+        this.lastTouchPos = new cc.Vec2(-1, -1);
+    }
 
-    setController: function (controller) {
+    setController (controller) {
         this.controller = controller;
-    },
+    }
 
-    initWithCellModels: function (cellsModels) {
+    initWithCellModels (cellsModels) {
         this.cellViews = [];
         for (let i = 1; i <= 9; i++) {
             this.cellViews[i] = [];
@@ -48,9 +45,9 @@ cc.Class({
                 this.cellViews[i][j] = aniView;
             }
         }
-    },
+    }
 
-    setListener: function () {
+    setListener () {
         this.node.on(
             cc.Node.EventType.TOUCH_START,
             (eventTouch) => {
@@ -108,10 +105,10 @@ cc.Class({
             },
             this
         );
-    },
+    }
 
     // 根据点击的像素位置，转换成网格中的位置
-    convertTouchPosToCell: function (pos) {
+    convertTouchPosToCell (pos) {
         pos = this.node.convertToNodeSpaceAR(pos);
         if (
             pos.x < 0 ||
@@ -124,10 +121,10 @@ cc.Class({
         let x = Math.floor(pos.x / CELL_WIDTH) + 1;
         let y = Math.floor(pos.y / CELL_HEIGHT) + 1;
         return cc.v2(x, y);
-    },
+    }
 
     // 移动格子
-    updateView: function (changeModels) {
+    updateView (changeModels) {
         let newCellViewInfo = [];
         for (let i in changeModels) {
             let model = changeModels[i];
@@ -161,10 +158,10 @@ cc.Class({
             let model = ele.model;
             this.cellViews[model.y][model.x] = ele.view;
         }, this);
-    },
+    }
 
     // 显示选中的格子背景
-    updateSelect: function (pos) {
+    updateSelect (pos) {
         for (let i = 1; i <= 9; i++) {
             for (let j = 1; j <= 9; j++) {
                 if (this.cellViews[i][j]) {
@@ -178,12 +175,12 @@ cc.Class({
                 }
             }
         }
-    },
+    }
 
     /**
      * 根据cell的model返回对应的view
      */
-    findViewByModel: function (model) {
+    findViewByModel (model) {
         for (let i = 1; i <= 9; i++) {
             for (let j = 1; j <= 9; j++) {
                 if (
@@ -195,9 +192,9 @@ cc.Class({
             }
         }
         return null;
-    },
+    }
 
-    getPlayAniTime: function (changeModels) {
+    getPlayAniTime (changeModels) {
         if (!changeModels) {
             return 0;
         }
@@ -210,20 +207,20 @@ cc.Class({
             }, this);
         }, this);
         return maxTime;
-    },
+    }
 
     // 获得爆炸次数， 同一个时间算一个
-    getStep: function (effectsQueue) {
+    getStep (effectsQueue) {
         if (!effectsQueue) {
             return 0;
         }
         return effectsQueue.reduce(function (maxValue, efffectCmd) {
             return Math.max(maxValue, efffectCmd.step || 0);
         }, 0);
-    },
+    }
 
     //一段时间内禁止操作
-    disableTouch: function (time, step) {
+    disableTouch (time, step) {
         if (time <= 0) {
             return;
         }
@@ -237,10 +234,10 @@ cc.Class({
                 }, this)
             )
         );
-    },
+    }
 
     // 正常击中格子后的操作
-    selectCell: function (cellPos) {
+    selectCell (cellPos) {
         let result = this.controller.selectCell(cellPos); // 直接先丢给model处理数据逻辑
         let changeModels = result[0]; // 有改变的cell，包含新生成的cell和生成马上摧毁的格子
         let effectsQueue = result[1]; //各种特效
@@ -259,9 +256,9 @@ cc.Class({
             this.audioUtils.playClick();
         }
         return changeModels;
-    },
+    }
 
-    playEffect: function (effectsQueue) {
+    playEffect (effectsQueue) {
         this.effectLayer.getComponent('EffectLayer').playEffects(effectsQueue);
-    },
-});
+    }
+}

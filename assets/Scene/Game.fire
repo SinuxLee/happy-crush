@@ -76,7 +76,7 @@
         "__id__": 5
       },
       {
-        "__id__": 15
+        "__id__": 16
       }
     ],
     "_active": true,
@@ -251,7 +251,7 @@
         "__id__": 8
       },
       {
-        "__id__": 12
+        "__id__": 13
       }
     ],
     "_active": true,
@@ -425,7 +425,7 @@
         "__id__": 11
       },
       {
-        "__id__": 16
+        "__id__": 12
       }
     ],
     "_prefab": null,
@@ -573,7 +573,27 @@
     "_id": "31fK+EyUdMM7BxIEz+UBw5"
   },
   {
-    "__type__": "d0d1fDj9rlDx5QUtP+2toQV",
+    "__type__": "cc.Mask",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 8
+    },
+    "_enabled": true,
+    "_materials": [
+      {
+        "__uuid__": "eca5d2f2-8ef6-41c2-bbe6-f9c79d09c432"
+      }
+    ],
+    "_spriteFrame": null,
+    "_type": 0,
+    "_segments": 64,
+    "_N$alphaThreshold": 1,
+    "_N$inverted": false,
+    "_id": "0cEHYnOu5HD6bbRuOmNLm8"
+  },
+  {
+    "__type__": "503aeCJVNxKya2erEKX8ZN5",
     "_name": "",
     "_objFlags": 0,
     "node": {
@@ -605,12 +625,12 @@
       }
     ],
     "effectLayer": {
-      "__id__": 12
+      "__id__": 13
     },
     "audioUtils": {
-      "__id__": 14
+      "__id__": 15
     },
-    "_id": "8eNT6iVu5HgIkNF7dZE+iL"
+    "_id": "5buz6aBcVAw6NczGYIfbF8"
   },
   {
     "__type__": "cc.Node",
@@ -623,7 +643,7 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 13
+        "__id__": 14
       }
     ],
     "_prefab": null,
@@ -680,7 +700,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 12
+      "__id__": 13
     },
     "_enabled": true,
     "bombWhite": {
@@ -690,7 +710,7 @@
       "__uuid__": "3b260bf3-fddb-415d-9d29-4247d176144e"
     },
     "audioUtils": {
-      "__id__": 14
+      "__id__": 15
     },
     "_id": "79xfynVzBBio9+DvmY1kYp"
   },
@@ -699,7 +719,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 15
+      "__id__": 16
     },
     "_enabled": true,
     "swap": {
@@ -764,7 +784,7 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 14
+        "__id__": 15
       }
     ],
     "_prefab": null,
@@ -815,26 +835,6 @@
     "_groupIndex": 0,
     "groupIndex": 0,
     "_id": "23k9oaTKRCcIJcPuvuuQQV"
-  },
-  {
-    "__type__": "cc.Mask",
-    "_name": "",
-    "_objFlags": 0,
-    "node": {
-      "__id__": 8
-    },
-    "_enabled": true,
-    "_materials": [
-      {
-        "__uuid__": "eca5d2f2-8ef6-41c2-bbe6-f9c79d09c432"
-      }
-    ],
-    "_spriteFrame": null,
-    "_type": 0,
-    "_segments": 64,
-    "_N$alphaThreshold": 1,
-    "_N$inverted": false,
-    "_id": "0cEHYnOu5HD6bbRuOmNLm8"
   },
   {
     "__type__": "cc.AudioSource",
