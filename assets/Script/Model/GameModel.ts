@@ -12,7 +12,7 @@ import {
 export default class GameModel {
     private cells: Array<Array<CellModel>> = null;
     private cellBgs = null;
-    private lastPos:cc.Vec2 = cc.v2(-1, -1);
+    private lastPos: cc.Vec2 = cc.v2(-1, -1);
     private cellTypeNum: number = 5;
     private cellCreateType = []; // 升成种类只在这个数组里面查找
 
@@ -171,7 +171,7 @@ export default class GameModel {
     }
     // controller调用的主要入口
     // 点击某个格子
-    selectCell(pos) {
+    selectCell(pos: cc.Vec2) {
         this.changeModels = []; // 发生改变的model，将作为返回值，给view播动作
         this.effectsQueue = []; // 动物消失，爆炸等特效
         let lastPos = this.lastPos;

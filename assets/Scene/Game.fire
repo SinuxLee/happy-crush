@@ -837,19 +837,6 @@
     "_id": "0cEHYnOu5HD6bbRuOmNLm8"
   },
   {
-    "__type__": "5ac64Iq16lBqrHZ0246FRcZ",
-    "_name": "",
-    "_objFlags": 0,
-    "node": {
-      "__id__": 5
-    },
-    "_enabled": true,
-    "grid": {
-      "__id__": 8
-    },
-    "_id": "00PUwHyJVP5b7xIbIux7mE"
-  },
-  {
     "__type__": "cc.AudioSource",
     "_name": "",
     "_objFlags": 0,
@@ -867,6 +854,19 @@
     "playOnLoad": true,
     "preload": false,
     "_id": "4baJDi8m5I8YsfWagtEQUk"
+  },
+  {
+    "__type__": "e6a06LW7IJPWZMD3YfCdc7m",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 5
+    },
+    "_enabled": true,
+    "grid": {
+      "__id__": 8
+    },
+    "_id": "ed3Dxvhq1JYbmKrkpHQB8M"
   },
   {
     "__type__": "cc.Canvas",
