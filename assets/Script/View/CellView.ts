@@ -4,21 +4,16 @@ import {
     CELL_HEIGHT,
     ANITIME,
 } from '../Model/ConstValue';
+const { ccclass, property } = cc._decorator;
 
-cc.Class({
-    extends: cc.Component,
+@ccclass
+export default class extends cc.Component{
+    @property(cc.SpriteFrame)
+    private defaultFrame: cc.SpriteFrame = null;
 
-    properties: {
-        defaultFrame: {
-            default: null,
-            type: cc.SpriteFrame,
-        },
-    },
+    private isSelect = false;
 
-    onLoad: function () {
-        this.isSelect = false;
-    },
-    initWithModel: function (model) {
+    initWithModel (model) {
         this.model = model;
         let x = model.startX;
         let y = model.startY;
@@ -30,15 +25,17 @@ cc.Class({
         } else {
             animation.play(model.status);
         }
-    },
+    }
 
     // 执行移动动作
-    updateView: function () {
+    updateView () {
         let cmd = this.model.cmd;
         if (cmd.length <= 0) {
             return;
         }
-        let actionArray = [];
+
+
+        const actionArray = [];
         let curTime = 0;
         for (let i in cmd) {
             if (cmd[i].playTime > curTime) {
@@ -89,9 +86,9 @@ cc.Class({
         } else {
             this.node.runAction(cc.sequence(...actionArray));
         }
-    },
+    }
 
-    setSelect: function (flag) {
+    setSelect (flag) {
         let animation = this.node.getComponent(cc.Animation);
         let bg = this.node.getChildByName('select');
         if (
@@ -108,5 +105,5 @@ cc.Class({
         }
         bg.active = flag;
         this.isSelect = flag;
-    },
-});
+    }
+}
