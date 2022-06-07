@@ -66,10 +66,6 @@ export default class GameModel {
         this.cells[x][y].setStartXY(y, x);
     }
 
-    initWithData(data) {
-        // to do
-    }
-
     /**
      *
      * @param x

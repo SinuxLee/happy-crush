@@ -21,6 +21,7 @@ cc.Class({
     selectCell: function (pos) {
         return this.gameModel.selectCell(pos);
     },
+
     cleanCmd: function () {
         this.gameModel.cleanCmd();
     },

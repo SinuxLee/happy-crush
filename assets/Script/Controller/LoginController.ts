@@ -1,20 +1,15 @@
-cc.Class({
-    extends: cc.Component,
+const {ccclass,property} = cc._decorator;
 
-    properties: {
-        loadingBar: {
-            type: cc.ProgressBar,
-            default: null,
-        },
-        loginButton: {
-            type: cc.Button,
-            default: null,
-        },
-        worldSceneBGM: {
-            type: cc.AudioClip,
-            default: null,
-        },
-    },
+@ccclass
+export default class extends cc.Component{
+    @property(cc.ProgressBar)
+    private loadingBar: cc.ProgressBar = null;
+    @property(cc.Button)
+    private loginButton: cc.Button = null;
+    @property(cc.AudioClip)
+    private worldSceneBGM: cc.AudioClip = null;
+
+    private gameSceneBGMAudioId: number = 0;
 
     onLoad() {
         this.gameSceneBGMAudioId = cc.audioEngine.play(
@@ -22,31 +17,29 @@ cc.Class({
             true,
             1
         );
-    },
+    }
 
-    start() {},
-
-    onLogin: function () {
+    onLogin () {
         this.loadingBar.node.active = true;
         this.loginButton.node.active = false;
         this.loadingBar.progress = 0;
         let backup = cc.loader.onProgress;
-        cc.loader.onProgress = function (count, amount) {
+        cc.loader.onProgress = (count, amount) => {
             this.loadingBar.progress = count / amount;
-        }.bind(this);
+        };
 
         cc.director.preloadScene(
             'Game',
-            function () {
+            () => {
                 cc.loader.onProgress = backup;
                 this.loadingBar.node.active = false;
                 this.loginButton.node.active = true;
                 cc.director.loadScene('Game');
-            }.bind(this)
+            }
         );
-    },
+    }
 
-    onDestroy: function () {
+    onDestroy () {
         cc.audioEngine.stop(this.gameSceneBGMAudioId);
-    },
-});
+    }
+}
