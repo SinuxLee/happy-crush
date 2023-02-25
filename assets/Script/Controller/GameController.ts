@@ -1,4 +1,5 @@
 import GameModel from '../Model/GameModel';
+import GridView from '../View/GridView';
 const { ccclass, property } = cc._decorator;
 
 @ccclass
@@ -9,10 +10,9 @@ export default class extends cc.Component {
     private gameModel: GameModel = null;
 
     onLoad() {
-        this.gameModel = new GameModel();
-        this.gameModel.init(4);
+        this.gameModel = new GameModel(6); // 设置出现的动物种类，至少3个动物。
 
-        const gridScript = this.grid.getComponent('GridView');
+        const gridScript = this.grid.getComponent(GridView);
         gridScript.setController(this);
         gridScript.initWithCellModels(this.gameModel.getCells());
     }

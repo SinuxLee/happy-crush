@@ -4,18 +4,9 @@
  * @param colPoints
  */
 export function mergePointArray(rowPoints: cc.Vec2[], colPoints: cc.Vec2[]) {
-    let result = rowPoints.concat();
-    colPoints = colPoints.filter((colEle) => {
-        let repeat = false;
-        result.forEach((rowEle) => {
-            if (colEle.equals(rowEle)) {
-                repeat = true;
-            }
-        }, this);
-        return !repeat;
-    }, this);
-    result.push(...colPoints);
-    return result;
+    return [...rowPoints, ...colPoints].filter((obj, index, self) => {
+        return index === self.findIndex((o) => o.equals(obj));
+    });
 }
 
 /**

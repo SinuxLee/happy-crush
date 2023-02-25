@@ -4,16 +4,20 @@ import {
     CELL_HEIGHT,
     ANITIME,
 } from '../Model/ConstValue';
+import CellModel from '../Model/CellModel';
 const { ccclass, property } = cc._decorator;
 
 @ccclass
-export default class extends cc.Component{
+export default class extends cc.Component {
     @property(cc.SpriteFrame)
     private defaultFrame: cc.SpriteFrame = null;
 
     private isSelect = false;
+    private status = ''
 
-    initWithModel (model) {
+    public model: CellModel = null;
+
+    initWithModel(model: CellModel) {
         this.model = model;
         let x = model.startX;
         let y = model.startY;
@@ -28,14 +32,13 @@ export default class extends cc.Component{
     }
 
     // 执行移动动作
-    updateView () {
+    updateView() {
         let cmd = this.model.cmd;
         if (cmd.length <= 0) {
             return;
         }
 
-
-        const actionArray = [];
+        const actionArray: cc.FiniteTimeAction[] = [];
         let curTime = 0;
         for (let i in cmd) {
             if (cmd[i].playTime > curTime) {
@@ -53,14 +56,12 @@ export default class extends cc.Component{
                     animation.play('effect');
                     actionArray.push(cc.delayTime(ANITIME.BOMB_BIRD_DELAY));
                 }
-                let callFunc = cc.callFunc(function () {
-                    this.node.destroy();
-                }, this);
+                let callFunc = cc.callFunc(() => this.node.destroy());
                 actionArray.push(callFunc);
             } else if (cmd[i].action == 'setVisible') {
                 let isVisible = cmd[i].isVisible;
                 actionArray.push(
-                    cc.callFunc(function () {
+                    cc.callFunc(() => {
                         if (isVisible) {
                             this.node.opacity = 255;
                         } else {
@@ -84,11 +85,11 @@ export default class extends cc.Component{
         if (actionArray.length == 1) {
             this.node.runAction(actionArray[0]);
         } else {
-            this.node.runAction(cc.sequence(...actionArray));
+            this.node.runAction(cc.sequence(actionArray));
         }
     }
 
-    setSelect (flag) {
+    setSelect(flag: boolean) {
         let animation = this.node.getComponent(cc.Animation);
         let bg = this.node.getChildByName('select');
         if (

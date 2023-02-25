@@ -1,7 +1,7 @@
-const {ccclass,property} = cc._decorator;
+const { ccclass, property } = cc._decorator;
 
 @ccclass
-export default class extends cc.Component{
+export default class extends cc.Component {
     @property(cc.ProgressBar)
     private loadingBar: cc.ProgressBar = null;
     @property(cc.Button)
@@ -12,35 +12,34 @@ export default class extends cc.Component{
     private gameSceneBGMAudioId: number = 0;
 
     onLoad() {
-        this.gameSceneBGMAudioId = cc.audioEngine.play(
-            this.worldSceneBGM,
-            true,
-            1
-        );
+        this.gameSceneBGMAudioId = cc.audioEngine.play(this.worldSceneBGM, true, 1);
     }
 
-    onLogin () {
+    onLogin() {
         this.loadingBar.node.active = true;
         this.loginButton.node.active = false;
         this.loadingBar.progress = 0;
 
-        let backup = cc.loader.onProgress;
-        cc.loader.onProgress = (count, amount) => {
-            this.loadingBar.progress = count / amount;
-        };
-
+        const sceneName = 'Game'
         cc.director.preloadScene(
-            'Game',
-            () => {
-                cc.loader.onProgress = backup;
-                this.loadingBar.node.active = false;
-                this.loginButton.node.active = true;
-                cc.director.loadScene('Game');
+            sceneName,
+            (completed: number, total: number) => {
+                const percent = Math.round(completed/total*100)/100
+                this.loadingBar.progress = (percent > this.loadingBar.progress) ? percent : this.loadingBar.progress
+            },
+            (err: Error) => {
+                if (!err) {
+                    this.loadingBar.node.active = false;
+                    cc.director.loadScene(sceneName);
+                    return
+                }
+
+                console.log(`failed to loadScene: ${err.message}`);
             }
         );
     }
 
-    onDestroy () {
+    onDestroy() {
         cc.audioEngine.stop(this.gameSceneBGMAudioId);
     }
 }

@@ -1,3 +1,5 @@
+import GameController from '../Controller/GameController';
+import CellModel from '../Model/CellModel';
 import {
     CELL_WIDTH,
     CELL_HEIGHT,
@@ -5,11 +7,12 @@ import {
     GRID_PIXEL_HEIGHT,
 } from '../Model/ConstValue';
 import AudioUtils from '../Utils/AudioUtils';
+import CellView from './CellView';
+import EffectLayer, { Command } from './EffectLayer';
 const { ccclass, property } = cc._decorator;
 
 @ccclass
-export default class extends cc.Component{
-
+export default class extends cc.Component {
     @property([cc.Prefab])
     private aniPre: cc.Prefab[] = [];
 
@@ -21,18 +24,18 @@ export default class extends cc.Component{
 
     private isCanMove = true;
     private isInPlayAni = false; // 是否在播放中
-    private lastTouchPos: cc.Vec2 = null;
+    private controller: GameController;
+    private cellViews: cc.Node[][];
 
-    onLoad () {
+    onLoad() {
         this.setListener();
-        this.lastTouchPos = new cc.Vec2(-1, -1);
     }
 
-    setController (controller) {
+    setController(controller: GameController) {
         this.controller = controller;
     }
 
-    initWithCellModels (cellsModels) {
+    initWithCellModels(cellsModels: CellModel[][]) {
         this.cellViews = [];
         for (let i = 1; i <= 9; i++) {
             this.cellViews[i] = [];
@@ -47,84 +50,61 @@ export default class extends cc.Component{
         }
     }
 
-    setListener () {
-        this.node.on(
-            cc.Node.EventType.TOUCH_START,
-            (eventTouch) => {
-                if (this.isInPlayAni) {
-                    //播放动画中，不允许点击
-                    return true;
-                }
-                let touchPos = eventTouch.getLocation();
-                let cellPos = this.convertTouchPosToCell(touchPos);
-                if (cellPos) {
-                    let changeModels = this.selectCell(cellPos);
-                    this.isCanMove = changeModels.length < 3;
-                } else {
-                    this.isCanMove = false;
-                }
-                return true;
-            },
-            this
-        );
+    setListener() {
+        this.node.on(cc.Node.EventType.TOUCH_START,(eventTouch: cc.Touch) => {
+            // 播放动画中，不允许点击
+            if (this.isInPlayAni) return true;
+
+            let touchPos = eventTouch.getLocation();
+            let cellPos = this.convertTouchPosToCell(touchPos);
+            if (cellPos) {
+                let changeModels = this.selectCell(cellPos);
+                this.isCanMove = changeModels.length < 3;
+            } else {
+                this.isCanMove = false;
+            }
+            return true;
+        });
 
         // 滑动操作逻辑
         this.node.on(
             cc.Node.EventType.TOUCH_MOVE,
-            (eventTouch) => {
+            (eventTouch: cc.Touch) => {
                 if (this.isCanMove) {
                     let startTouchPos = eventTouch.getStartLocation();
                     let startCellPos =
                         this.convertTouchPosToCell(startTouchPos);
                     let touchPos = eventTouch.getLocation();
                     let cellPos = this.convertTouchPosToCell(touchPos);
+                    if (cellPos == null) return;
+
                     if (
                         startCellPos.x != cellPos.x ||
                         startCellPos.y != cellPos.y
                     ) {
                         this.isCanMove = false;
-                        let changeModels = this.selectCell(cellPos);
+                        this.selectCell(cellPos);
                     }
                 }
-            },
-            this
-        );
-
-        this.node.on(
-            cc.Node.EventType.TOUCH_END,
-            (eventTouch) => {
-                // console.log("1111");
-            },
-            this
-        );
-
-        this.node.on(
-            cc.Node.EventType.TOUCH_CANCEL,
-            (eventTouch) => {
-                // console.log("1111");
             },
             this
         );
     }
 
     // 根据点击的像素位置，转换成网格中的位置
-    convertTouchPosToCell (pos) {
+    convertTouchPosToCell(pos: cc.Vec2): cc.Vec2 {
         pos = this.node.convertToNodeSpaceAR(pos);
-        if (
-            pos.x < 0 ||
-            pos.x >= GRID_PIXEL_WIDTH ||
-            pos.y < 0 ||
-            pos.y >= GRID_PIXEL_HEIGHT
-        ) {
-            return false;
-        }
+        if (pos.x < 0 || pos.y < 0 || 
+            pos.x >= GRID_PIXEL_WIDTH || 
+            pos.y >= GRID_PIXEL_HEIGHT) return null;
+            
         let x = Math.floor(pos.x / CELL_WIDTH) + 1;
         let y = Math.floor(pos.y / CELL_HEIGHT) + 1;
         return cc.v2(x, y);
     }
 
     // 移动格子
-    updateView (changeModels) {
+    updateView(changeModels: CellModel[]) {
         let newCellViewInfo = [];
         for (let i in changeModels) {
             let model = changeModels[i];
@@ -154,25 +134,19 @@ export default class extends cc.Component{
             }
         }
         // 重新标记this.cellviews的信息
-        newCellViewInfo.forEach(function (ele) {
+        newCellViewInfo.forEach((ele) =>{
             let model = ele.model;
             this.cellViews[model.y][model.x] = ele.view;
         }, this);
     }
 
     // 显示选中的格子背景
-    updateSelect (pos) {
+    updateSelect(pos: cc.Vec2) {
         for (let i = 1; i <= 9; i++) {
+            const row = this.cellViews[i];
             for (let j = 1; j <= 9; j++) {
-                if (this.cellViews[i][j]) {
-                    let cellScript =
-                        this.cellViews[i][j].getComponent('CellView');
-                    if (pos.x == j && pos.y == i) {
-                        cellScript.setSelect(true);
-                    } else {
-                        cellScript.setSelect(false);
-                    }
-                }
+                const view = row[j].getComponent(CellView)
+                view.setSelect(pos.x === j && pos.y === i);
             }
         }
     }
@@ -180,55 +154,53 @@ export default class extends cc.Component{
     /**
      * 根据cell的model返回对应的view
      */
-    findViewByModel (model) {
+    findViewByModel(model: CellModel):{view: cc.Node;x: number;y: number;} {
         for (let i = 1; i <= 9; i++) {
+            const row = this.cellViews[i]
             for (let j = 1; j <= 9; j++) {
-                if (
-                    this.cellViews[i][j] &&
-                    this.cellViews[i][j].getComponent('CellView').model == model
-                ) {
-                    return { view: this.cellViews[i][j], x: j, y: i };
+                const view = row[j].getComponent(CellView)
+                if (view.model === model) {
+                    return { view: row[j], x: j, y: i };
                 }
             }
         }
+
         return null;
     }
 
-    getPlayAniTime (changeModels) {
-        if (!changeModels) {
-            return 0;
-        }
+    getPlayAniTime(changeModels: CellModel[]): number {
+        if (!changeModels) return 0;
+
         let maxTime = 0;
-        changeModels.forEach(function (ele) {
-            ele.cmd.forEach(function (cmd) {
+        changeModels.forEach((ele) => {
+            ele.cmd.forEach((cmd: Command) => {
                 if (maxTime < cmd.playTime + cmd.keepTime) {
                     maxTime = cmd.playTime + cmd.keepTime;
                 }
             }, this);
         }, this);
+
         return maxTime;
     }
 
     // 获得爆炸次数， 同一个时间算一个
-    getStep (effectsQueue) {
-        if (!effectsQueue) {
-            return 0;
-        }
-        return effectsQueue.reduce(function (maxValue, efffectCmd) {
+    getStep(effectsQueue: Command[]): number {
+        if (!effectsQueue) return 0;
+
+        return effectsQueue.reduce((maxValue, efffectCmd) => {
             return Math.max(maxValue, efffectCmd.step || 0);
         }, 0);
     }
 
-    //一段时间内禁止操作
-    disableTouch (time, step) {
-        if (time <= 0) {
-            return;
-        }
+    // 一段时间内禁止操作
+    disableTouch(time: number, step: number) {
+        if (time <= 0) return;
+        
         this.isInPlayAni = true;
         this.node.runAction(
             cc.sequence(
                 cc.delayTime(time),
-                cc.callFunc(function () {
+                cc.callFunc(() => {
                     this.isInPlayAni = false;
                     this.audioUtils.playContinuousMatch(step);
                 }, this)
@@ -237,10 +209,9 @@ export default class extends cc.Component{
     }
 
     // 正常击中格子后的操作
-    selectCell (cellPos) {
+    selectCell(cellPos: cc.Vec2): CellModel[] {
         let result = this.controller.selectCell(cellPos); // 直接先丢给model处理数据逻辑
-        let changeModels = result[0]; // 有改变的cell，包含新生成的cell和生成马上摧毁的格子
-        let effectsQueue = result[1]; //各种特效
+        const [changeModels, effectsQueue] = result; // 有改变的cell，包含新生成的cell和生成马上摧毁的格子
         this.playEffect(effectsQueue);
         this.disableTouch(
             this.getPlayAniTime(changeModels),
@@ -258,7 +229,7 @@ export default class extends cc.Component{
         return changeModels;
     }
 
-    playEffect (effectsQueue) {
-        this.effectLayer.getComponent('EffectLayer').playEffects(effectsQueue);
+    playEffect(effectsQueue: Command[]) {
+        this.effectLayer.getComponent(EffectLayer).playEffects(effectsQueue);
     }
 }

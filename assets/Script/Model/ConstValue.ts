@@ -11,7 +11,7 @@ export enum CELL_TYPE {
 
 export const CELL_BASENUM = 6;
 export const CELL_STATUS = Object.freeze({
-    COMMON: 0,
+    COMMON: 'common',
     CLICK: 'click',
     LINE: 'line',
     COLUMN: 'column',

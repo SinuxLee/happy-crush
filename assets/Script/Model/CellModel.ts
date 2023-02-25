@@ -1,23 +1,21 @@
+import { Command } from '../View/EffectLayer';
 import { CELL_TYPE, ANITIME, CELL_STATUS } from './ConstValue';
-export default class CellModel {
-    private x: number = 1;
-    private y: number = 1;
-    private startX: number = 1;
-    private startY: number = 1;
-    private cmd = [];
-    private isDeath: boolean = false;
-    private objecCount: number = 0;
-    private status;
 
-    public type;
+export default class CellModel {
+    public cmd: Command[] = [];
+    public isDeath = false;
+    public startX: number = 1;
+    public startY: number = 1;
+    public x: number = 1;
+    public y: number = 1;
+    public type = 0;
+    public status = '';
 
     constructor() {
-        this.type = null;
         this.status = CELL_STATUS.COMMON;
-        this.objecCount = Math.floor(Math.random() * 1000);
     }
 
-    init(type) {
+    init(type: number) {
         this.type = type;
     }
 
@@ -38,64 +36,78 @@ export default class CellModel {
         this.startY = y;
     }
 
-    setStatus(status) {
+    setStatus(status: string) {
         this.status = status;
     }
 
-    moveToAndBack(pos) {
+    moveToAndBack(pos: cc.Vec2) {
         let srcPos = cc.v2(this.x, this.y);
         this.cmd.push({
+            step: 0,
             action: 'moveTo',
             keepTime: ANITIME.TOUCH_MOVE,
             playTime: 0,
             pos: pos,
+            isVisible: false,
         });
         this.cmd.push({
+            step: 0,
             action: 'moveTo',
             keepTime: ANITIME.TOUCH_MOVE,
             playTime: ANITIME.TOUCH_MOVE,
             pos: srcPos,
+            isVisible: false,
         });
     }
 
-    moveTo(pos, playTime) {
+    moveTo(pos: cc.Vec2, playTime: number) {
         this.cmd.push({
+            step: 0,
             action: 'moveTo',
             keepTime: ANITIME.TOUCH_MOVE,
             playTime: playTime,
             pos: pos,
+            isVisible: false,
         });
         this.x = pos.x;
         this.y = pos.y;
     }
 
-    toDie(playTime) {
+    toDie(playTime: number) {
         this.cmd.push({
+            step: 0,
             action: 'toDie',
             playTime: playTime,
             keepTime: ANITIME.DIE,
+            pos: null,
+            isVisible: false,
         });
         this.isDeath = true;
     }
 
-    toShake(playTime) {
+    toShake(playTime: number) {
         this.cmd.push({
+            step: 0,
             action: 'toShake',
             playTime: playTime,
             keepTime: ANITIME.DIE_SHAKE,
+            pos: null,
+            isVisible: false,
         });
     }
 
-    setVisible(playTime, isVisible) {
+    setVisible(playTime: number, isVisible: boolean) {
         this.cmd.push({
+            step: 0,
             action: 'setVisible',
             playTime: playTime,
             keepTime: 0,
+            pos: null,
             isVisible: isVisible,
         });
     }
 
     isBird() {
-        return this.type == CELL_TYPE.G;
+        return this.type == CELL_TYPE.BIRD;
     }
 }
