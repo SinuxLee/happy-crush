@@ -67,28 +67,21 @@ export default class extends cc.Component {
         });
 
         // 滑动操作逻辑
-        this.node.on(
-            cc.Node.EventType.TOUCH_MOVE,
-            (eventTouch: cc.Touch) => {
-                if (this.isCanMove) {
-                    let startTouchPos = eventTouch.getStartLocation();
-                    let startCellPos =
-                        this.convertTouchPosToCell(startTouchPos);
-                    let touchPos = eventTouch.getLocation();
-                    let cellPos = this.convertTouchPosToCell(touchPos);
-                    if (cellPos == null) return;
+        this.node.on(cc.Node.EventType.TOUCH_MOVE,(eventTouch: cc.Touch) => {
+            if (!this.isCanMove) return
 
-                    if (
-                        startCellPos.x != cellPos.x ||
-                        startCellPos.y != cellPos.y
-                    ) {
-                        this.isCanMove = false;
-                        this.selectCell(cellPos);
-                    }
-                }
-            },
-            this
-        );
+            // 获取开始和结束的像素坐标
+            const startTouchPos = eventTouch.getStartLocation();
+            const touchPos = eventTouch.getLocation();
+
+            // 将像素坐标转换成数组下标
+            const startCellPos = this.convertTouchPosToCell(startTouchPos);
+            const cellPos = this.convertTouchPosToCell(touchPos);
+            if (cellPos == null || cellPos.equals(startCellPos)) return;
+
+            this.isCanMove = false;
+            this.selectCell(cellPos);
+        });
     }
 
     // 根据点击的像素位置，转换成网格中的位置
@@ -145,6 +138,7 @@ export default class extends cc.Component {
         for (let i = 1; i <= 9; i++) {
             const row = this.cellViews[i];
             for (let j = 1; j <= 9; j++) {
+                if(!row[j]) continue
                 const view = row[j].getComponent(CellView)
                 view.setSelect(pos.x === j && pos.y === i);
             }
@@ -158,6 +152,7 @@ export default class extends cc.Component {
         for (let i = 1; i <= 9; i++) {
             const row = this.cellViews[i]
             for (let j = 1; j <= 9; j++) {
+                if(!row[j]) continue
                 const view = row[j].getComponent(CellView)
                 if (view.model === model) {
                     return { view: row[j], x: j, y: i };

@@ -10,11 +10,11 @@ export default class extends cc.Component {
     private gameModel: GameModel = null;
 
     onLoad() {
-        this.gameModel = new GameModel(6); // 设置出现的动物种类，至少3个动物。
+        this.gameModel = new GameModel();
 
         const gridScript = this.grid.getComponent(GridView);
         gridScript.setController(this);
-        gridScript.initWithCellModels(this.gameModel.getCells());
+        gridScript.initWithCellModels(this.gameModel.cells);
     }
 
     selectCell(pos: cc.Vec2) {

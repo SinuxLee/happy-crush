@@ -59,6 +59,7 @@ export default class extends cc.Component {
                 );
             }, this);
 
+            // cc.Tween
             this.node.runAction(cc.sequence(delayTime, callFunc));
         }, this);
     }

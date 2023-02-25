@@ -1,46 +1,54 @@
 import CellModel from './CellModel';
-import { mergePointArray, exclusivePoint } from '../Utils/ModelUtils';
 import {
     CELL_TYPE,
     CELL_BASENUM,
     CELL_STATUS,
-    GRID_WIDTH,
-    GRID_HEIGHT,
+    GRID_COL,
+    GRID_ROW,
     ANITIME,
 } from './ConstValue';
 import { Command } from '../View/EffectLayer';
 
 export default class GameModel {
-    private cells: CellModel[][] = null;
+    private readonly _rowPin = [cc.v2(1, 0),cc.v2(-1, 0)]
+    private readonly _colPin = [cc.v2(0, -1),cc.v2(0, 1)]
+
+    private _cells: CellModel[][] = null;
     private lastPos: cc.Vec2 = cc.v2(-1, -1);
-    private cellTypeNum: number = 5;
-    private cellCreateType = []; // 升成种类只在这个数组里面查找
+    private cellTypeNum: number = 0; // 动物种类总数
+    private cellCreateType = []; // 生成种类只在这个数组里面查找
     private curTime = 0;
     private changeModels: CellModel[];
     private effectsQueue: Command[];
 
-    constructor(cellTypeNum: number) {
-        this.cells = [];
-        this.setCellTypeNum(cellTypeNum ?? this.cellTypeNum);
-        for (let i = 1; i <= GRID_WIDTH; i++) {
-            this.cells[i] = [];
-            for (let j = 1; j <= GRID_HEIGHT; j++) {
-                this.cells[i][j] = new CellModel();
+    get cells(): CellModel[][] {
+        return this._cells;
+    }
+
+    constructor(cellTypeNum: number = 3) {
+        if(cellTypeNum < 3) cellTypeNum = 3;
+
+        this._cells = [];
+        this.setCellTypeNum(cellTypeNum);
+        for (let i = 1; i <= GRID_COL; i++) {
+            this._cells[i] = [];
+            for (let j = 1; j <= GRID_ROW; j++) {
+                this._cells[i][j] = new CellModel();
             }
         }
 
-        for (let i = 1; i <= GRID_WIDTH; i++) {
-            for (let j = 1; j <= GRID_HEIGHT; j++) {
+        for (let i = 1; i <= GRID_COL; i++) {
+            for (let j = 1; j <= GRID_ROW; j++) {
                 // 已经被mock数据生成了
-                if (this.cells[i][j].type > 0) continue;
+                if (this._cells[i][j].type > 0) continue;
 
                 let flag = false;
                 do{
-                    this.cells[i][j].init(this.getRandomCellType());
+                    this._cells[i][j].init(this.getRandomCellType());
                     let result = this.checkPoint(j, i)[0];
                     flag = (result.length > 2);
-                    this.cells[i][j].setXY(j, i);
-                    this.cells[i][j].setStartXY(j, i);
+                    this._cells[i][j].setXY(j, i);
+                    this._cells[i][j].setStartXY(j, i);
                 }while(flag)
             }
         }
@@ -58,9 +66,9 @@ export default class GameModel {
     }
 
     mockInit(x:number, y:number, type:number) {
-        this.cells[x][y].init(type);
-        this.cells[x][y].setXY(y, x);
-        this.cells[x][y].setStartXY(y, x);
+        this._cells[x][y].init(type);
+        this._cells[x][y].setXY(y, x);
+        this._cells[x][y].setStartXY(y, x);
     }
 
     /**
@@ -70,19 +78,11 @@ export default class GameModel {
      * @param recursive 是否递归查找
      * @returns {([]|string|*)[]}
      */
-    checkPoint(
-        x: number,
-        y: number,
-        recursive: boolean = false
-    ): typeof result {
-        let rowResult = this.checkWithDirection(x, y, [
-            cc.v2(1, 0),
-            cc.v2(-1, 0),
-        ]);
-        let colResult = this.checkWithDirection(x, y, [
-            cc.v2(0, -1),
-            cc.v2(0, 1),
-        ]);
+    checkPoint(x: number,y: number,recursive: boolean = false): typeof result {
+        // 能与当前节点连起来的行或者列
+        const rowResult = this.checkWithDirection(x, y, this._rowPin);
+        const colResult = this.checkWithDirection(x, y, this._colPin);
+
         let samePoints: cc.Vec2[] = [];
         let newCellStatus = '';
         if (rowResult.length >= 5 || colResult.length >= 5) {
@@ -94,21 +94,34 @@ export default class GameModel {
         } else if (colResult.length >= 4) {
             newCellStatus = CELL_STATUS.COLUMN;
         }
+
+        // 记录即将消失的节点
         if (rowResult.length >= 3) {
             samePoints = rowResult;
         }
         if (colResult.length >= 3) {
-            samePoints = mergePointArray(samePoints, colResult);
+            samePoints = [...samePoints, ...colResult].filter((obj, index, self) => {
+                return index === self.findIndex((o) => o.equals(obj));
+            })
         }
+
         let result: [cc.Vec2[], string, number, cc.Vec2] = [
             samePoints,
             newCellStatus,
-            this.cells[y][x].type,
+            this._cells[y][x].type,
             cc.v2(x, y),
         ];
+
         // 检查一下消除的其他节点， 能不能生成更大范围的消除
         if (recursive && result.length >= 3) {
-            let subCheckPoints = exclusivePoint(samePoints, cc.v2(x, y));
+            const exclusivePoint = cc.v2(x, y)
+            const subCheckPoints = new Array<cc.Vec2>();
+            for (const point of samePoints) {
+                if (!point.equals(exclusivePoint)) {
+                    subCheckPoints.push(point);
+                }
+            }
+
             for (let point of subCheckPoints) {
                 let subResult = this.checkPoint(point.x, point.y, false);
                 if (
@@ -123,55 +136,60 @@ export default class GameModel {
         return result;
     }
 
+    /**
+     * 检查当前节点周边能连起来的格子
+     * @param x 
+     * @param y 
+     * @param direction 
+     * @returns 可以连接的点坐标数组
+     */
     checkWithDirection(x: number, y: number, direction: cc.Vec2[]): cc.Vec2[] {
-        let queue: cc.Vec2[] = [];
-        let vis = [];
-        vis[x + y * 9] = true;
+        const queue: cc.Vec2[] = [];
         queue.push(cc.v2(x, y));
-        let front = 0;
-        while (front < queue.length) {
-            //let direction = [cc.v2(0, -1), cc.v2(0, 1), cc.v2(1, 0), cc.v2(-1, 0)];
-            let point = queue[front];
-            let cellModel = this.cells[point.y][point.x];
-            front++;
-            if (!cellModel) {
-                continue;
-            }
-            for (let i = 0; i < direction.length; i++) {
-                let tmpX = point.x + direction[i].x;
-                let tmpY = point.y + direction[i].y;
-                if (
-                    tmpX < 1 ||
-                    tmpX > 9 ||
-                    tmpY < 1 ||
-                    tmpY > 9 ||
-                    vis[tmpX + tmpY * 9] ||
-                    !this.cells[tmpY][tmpX]
-                ) {
-                    continue;
-                }
-                if (cellModel.type === this.cells[tmpY][tmpX].type) {
-                    vis[tmpX + tmpY * 9] = true;
-                    queue.push(cc.v2(tmpX, tmpY));
-                }
+
+        const visted = new Set<number>()
+        visted.add(x + y * 9) // 当前节点加入已访问集合
+        
+        // 判断被搜索的点是否合法
+        const isValid = (next:cc.Vec2):boolean =>{
+            if(next.x <= 0 || next.x > GRID_COL) return false
+            if(next.y <=0 || next.y > GRID_ROW) return false
+            if(visted.has(next.x + next.y * 9)) return false
+            if(!this._cells[next.y][next.x]) return false
+
+            return true
+        }
+
+        let idx = 0;
+        while (idx < queue.length) {
+            const current = queue[idx++];
+            const cellModel = this._cells[current.y][current.x];
+            if (!cellModel) continue;
+
+            // 当前节点为原点，按照坐标方向搜索
+            for (const dir of direction) {
+                const next = current.add(dir)
+                if (!isValid(next)) continue;
+                visted.add(next.x + next.y * 9); // 已访问的节点不再访问
+
+                const cell = this._cells[next.y][next.x]
+                if (cellModel.type !== cell.type) continue
+                queue.push(next);
             }
         }
         return queue;
     }
 
     printInfo() {
-        for (let i = 1; i <= 9; i++) {
+        for (let i = 1; i <= GRID_ROW; i++) {
             let printStr = '';
-            for (let j = 1; j <= 9; j++) {
-                printStr += this.cells[i][j].type + ' ';
+            for (let j = 1; j <= GRID_COL; j++) {
+                printStr += this._cells[i][j].type + ' ';
             }
             console.log(printStr);
         }
     }
 
-    getCells(): CellModel[][] {
-        return this.cells;
-    }
     // controller调用的主要入口
     // 点击某个格子
     selectCell(pos: cc.Vec2): [CellModel[], Command[] | null] {
@@ -184,8 +202,9 @@ export default class GameModel {
             this.lastPos = pos;
             return [[], []];
         }
-        let curClickCell = this.cells[pos.y][pos.x]; //当前点击的格子
-        let lastClickCell = this.cells[lastPos.y][lastPos.x]; // 上一次点击的格式
+
+        let curClickCell = this._cells[pos.y][pos.x]; // 当前点击的格子
+        let lastClickCell = this._cells[lastPos.y][lastPos.x]; // 上一次点击的格子
         this.exchangeCell(lastPos, pos);
         let result1 = this.checkPoint(pos.x, pos.y)[0];
         let result2 = this.checkPoint(lastPos.x, lastPos.y)[0];
@@ -197,6 +216,7 @@ export default class GameModel {
                 lastClickCell.status != CELL_STATUS.COMMON) ||
             curClickCell.status == CELL_STATUS.BIRD ||
             lastClickCell.status == CELL_STATUS.BIRD;
+        
         if (result1.length < 3 && result2.length < 3 && !isCanBomb) {
             //不会发生消除的情况
             this.exchangeCell(lastPos, pos);
@@ -214,21 +234,21 @@ export default class GameModel {
             return [this.changeModels, this.effectsQueue];
         }
     }
+
     // 消除
     processCrush(checkPoint: cc.Vec2[] | CellModel[]) {
         let cycleCount = 0;
         while (checkPoint.length > 0) {
             let bombModels: CellModel[] = [];
             if (cycleCount == 0 && checkPoint.length == 2) {
-                //特殊消除
-                let pos1 = checkPoint[0];
-                let pos2 = checkPoint[1];
-                let model1 = this.cells[pos1.y][pos1.x];
-                let model2 = this.cells[pos2.y][pos2.x];
-                if (
-                    model1.status == CELL_STATUS.BIRD ||
-                    model2.status == CELL_STATUS.BIRD
-                ) {
+                // 特殊消除
+                const [pos1,pos2] = (checkPoint as cc.Vec2[]);
+                const model1 = this.getCell(pos1);
+                const model2 = this.getCell(pos2);
+
+                cc.log(model1.status, model2.status)
+                if ( model1.status == CELL_STATUS.BIRD ||
+                    model2.status == CELL_STATUS.BIRD) {
                     if (model1.status == CELL_STATUS.BIRD) {
                         model1.type = model2.type;
                         bombModels.push(model1);
@@ -236,21 +256,24 @@ export default class GameModel {
                         model2.type = model1.type;
                         bombModels.push(model2);
                     }
+                }else if(model1.status != CELL_STATUS.COMMON && 
+                    model2.status != CELL_STATUS.COMMON){
+                    bombModels.push(model1);
+                    if(model1.status !== model2.status) bombModels.push(model2);
                 }
             }
+
             for (let i in checkPoint) {
                 let pos = checkPoint[i];
-                if (!this.cells[pos.y][pos.x]) {
-                    continue;
-                }
+                if (!this._cells[pos.y][pos.x]) continue;
+
                 let [result, newCellStatus, newCellType, crushPoint] =
                     this.checkPoint(pos.x, pos.y, true);
 
-                if (result.length < 3) {
-                    continue;
-                }
+                if (result.length < 3) continue;
+                
                 for (let j in result) {
-                    let model = this.cells[result[j].y][result[j].x];
+                    let model = this._cells[result[j].y][result[j].x];
                     this.crushCell(result[j].x, result[j].y, false, cycleCount);
                     if (model.status != CELL_STATUS.COMMON) {
                         bombModels.push(model);
@@ -265,16 +288,13 @@ export default class GameModel {
         }
     }
 
-    //生成新cell
+    // 生成新cell
     createNewCell(pos: cc.Vec2, status: string, type: number) {
-        if (status == '') {
-            return;
-        }
-        if (status == CELL_STATUS.BIRD) {
-            type = CELL_TYPE.BIRD;
-        }
+        if (status == '') return;
+        if (status == CELL_STATUS.BIRD) type = CELL_TYPE.BIRD;
+
         let model = new CellModel();
-        this.cells[pos.y][pos.x] = model;
+        this._cells[pos.y][pos.x] = model;
         model.init(type);
         model.setStartXY(pos.x, pos.y);
         model.setXY(pos.x, pos.y);
@@ -287,18 +307,18 @@ export default class GameModel {
     // 下落
     down(): CellModel[] {
         let newCheckPoint: CellModel[] = [];
-        for (let i = 1; i <= GRID_WIDTH; i++) {
-            for (let j = 1; j <= GRID_HEIGHT; j++) {
-                if (this.cells[i][j] == null) {
+        for (let i = 1; i <= GRID_COL; i++) {
+            for (let j = 1; j <= GRID_ROW; j++) {
+                if (this._cells[i][j] == null) {
                     let curRow = i;
-                    for (let k = curRow; k <= GRID_HEIGHT; k++) {
-                        if (this.cells[k][j]) {
-                            this.pushToChangeModels(this.cells[k][j]);
-                            newCheckPoint.push(this.cells[k][j]);
-                            this.cells[curRow][j] = this.cells[k][j];
-                            this.cells[k][j] = null;
-                            this.cells[curRow][j].setXY(j, curRow);
-                            this.cells[curRow][j].moveTo(
+                    for (let k = curRow; k <= GRID_ROW; k++) {
+                        if (this._cells[k][j]) {
+                            this.pushToChangeModels(this._cells[k][j]);
+                            newCheckPoint.push(this._cells[k][j]);
+                            this._cells[curRow][j] = this._cells[k][j];
+                            this._cells[k][j] = null;
+                            this._cells[curRow][j].setXY(j, curRow);
+                            this._cells[curRow][j].moveTo(
                                 cc.v2(j, curRow),
                                 this.curTime
                             );
@@ -306,15 +326,15 @@ export default class GameModel {
                         }
                     }
                     let count = 1;
-                    for (let k = curRow; k <= GRID_HEIGHT; k++) {
-                        this.cells[k][j] = new CellModel();
-                        this.cells[k][j].init(this.getRandomCellType());
-                        this.cells[k][j].setStartXY(j, count + GRID_HEIGHT);
-                        this.cells[k][j].setXY(j, count + GRID_HEIGHT);
-                        this.cells[k][j].moveTo(cc.v2(j, k), this.curTime);
+                    for (let k = curRow; k <= GRID_ROW; k++) {
+                        this._cells[k][j] = new CellModel();
+                        this._cells[k][j].init(this.getRandomCellType());
+                        this._cells[k][j].setStartXY(j, count + GRID_ROW);
+                        this._cells[k][j].setXY(j, count + GRID_ROW);
+                        this._cells[k][j].moveTo(cc.v2(j, k), this.curTime);
                         count++;
-                        this.changeModels.push(this.cells[k][j]);
-                        newCheckPoint.push(this.cells[k][j]);
+                        this.changeModels.push(this._cells[k][j]);
+                        newCheckPoint.push(this._cells[k][j]);
                     }
                 }
             }
@@ -331,29 +351,33 @@ export default class GameModel {
     }
 
     cleanCmd(): void {
-        for (let i = 1; i <= GRID_WIDTH; i++) {
-            for (let j = 1; j <= GRID_HEIGHT; j++) {
-                if (this.cells[i][j]) {
-                    this.cells[i][j].cmd = [];
+        for (let i = 1; i <= GRID_COL; i++) {
+            for (let j = 1; j <= GRID_ROW; j++) {
+                if (this._cells[i][j]) {
+                    this._cells[i][j].cmd = [];
                 }
             }
         }
     }
 
+    getCell(pos: cc.Vec2): CellModel{
+        return this._cells[pos.y][pos.x];
+    }
+
+    setCell(pos: cc.Vec2, cell: CellModel){
+        cell.x = pos.x;cell.y = pos.y;
+        this._cells[pos.y][pos.x] = cell
+    }
+
     exchangeCell(pos1: cc.Vec2, pos2: cc.Vec2) {
-        let tmpModel = this.cells[pos1.y][pos1.x];
-        this.cells[pos1.y][pos1.x] = this.cells[pos2.y][pos2.x];
-        this.cells[pos1.y][pos1.x].x = pos1.x;
-        this.cells[pos1.y][pos1.x].y = pos1.y;
-        this.cells[pos2.y][pos2.x] = tmpModel;
-        this.cells[pos2.y][pos2.x].x = pos2.x;
-        this.cells[pos2.y][pos2.x].y = pos2.y;
+        const tmp = this.getCell(pos2);
+        this.setCell(pos2,this.getCell(pos1))
+        this.setCell(pos1,tmp)
     }
 
     // 设置种类
     // Todo 改成乱序算法
     setCellTypeNum(num: number) {
-        console.log('num = ', num);
         this.cellTypeNum = num;
         this.cellCreateType = [];
         let createTypeList = this.cellCreateType;
@@ -381,26 +405,26 @@ export default class GameModel {
             let bombTime: number = ANITIME.BOMB_DELAY;
             bombModels.forEach((model: CellModel) => {
                 if (model.status == CELL_STATUS.LINE) {
-                    for (let i = 1; i <= GRID_WIDTH; i++) {
-                        if (this.cells[model.y][i]) {
+                    for (let i = 1; i <= GRID_COL; i++) {
+                        if (this._cells[model.y][i]) {
                             if (
-                                this.cells[model.y][i].status !=
+                                this._cells[model.y][i].status !=
                                 CELL_STATUS.COMMON
                             ) {
-                                newBombModel.push(this.cells[model.y][i]);
+                                newBombModel.push(this._cells[model.y][i]);
                             }
                             this.crushCell(i, model.y, false, cycleCount);
                         }
                     }
                     this.addRowBomb(this.curTime, cc.v2(model.x, model.y));
                 } else if (model.status == CELL_STATUS.COLUMN) {
-                    for (let i = 1; i <= GRID_HEIGHT; i++) {
-                        if (this.cells[i][model.x]) {
+                    for (let i = 1; i <= GRID_ROW; i++) {
+                        if (this._cells[i][model.x]) {
                             if (
-                                this.cells[i][model.x].status !=
+                                this._cells[i][model.x].status !=
                                 CELL_STATUS.COMMON
                             ) {
-                                newBombModel.push(this.cells[i][model.x]);
+                                newBombModel.push(this._cells[i][model.x]);
                             }
                             this.crushCell(model.x, i, false, cycleCount);
                         }
@@ -409,15 +433,15 @@ export default class GameModel {
                 } else if (model.status == CELL_STATUS.WRAP) {
                     let x = model.x;
                     let y = model.y;
-                    for (let i = 1; i <= GRID_HEIGHT; i++) {
-                        for (let j = 1; j <= GRID_WIDTH; j++) {
+                    for (let i = 1; i <= GRID_ROW; i++) {
+                        for (let j = 1; j <= GRID_COL; j++) {
                             let delta = Math.abs(x - j) + Math.abs(y - i);
-                            if (this.cells[i][j] && delta <= 2) {
+                            if (this._cells[i][j] && delta <= 2) {
                                 if (
-                                    this.cells[i][j].status !=
+                                    this._cells[i][j].status !=
                                     CELL_STATUS.COMMON
                                 ) {
-                                    newBombModel.push(this.cells[i][j]);
+                                    newBombModel.push(this._cells[i][j]);
                                 }
                                 this.crushCell(j, i, false, cycleCount);
                             }
@@ -431,17 +455,17 @@ export default class GameModel {
                     if (crushType == CELL_TYPE.BIRD) {
                         crushType = this.getRandomCellType();
                     }
-                    for (let i = 1; i <= GRID_HEIGHT; i++) {
-                        for (let j = 1; j <= GRID_WIDTH; j++) {
+                    for (let i = 1; i <= GRID_ROW; i++) {
+                        for (let j = 1; j <= GRID_COL; j++) {
                             if (
-                                this.cells[i][j] &&
-                                this.cells[i][j].type == crushType
+                                this._cells[i][j] &&
+                                this._cells[i][j].type == crushType
                             ) {
                                 if (
-                                    this.cells[i][j].status !=
+                                    this._cells[i][j].status !=
                                     CELL_STATUS.COMMON
                                 ) {
-                                    newBombModel.push(this.cells[i][j]);
+                                    newBombModel.push(this._cells[i][j]);
                                 }
                                 this.crushCell(j, i, true, cycleCount);
                             }
@@ -450,17 +474,16 @@ export default class GameModel {
                     //this.crushCell(model.x, model.y);
                 }
             }, this);
-            if (bombModels.length > 0) {
-                this.curTime += bombTime;
-            }
+            
+            if (bombModels.length > 0) this.curTime += bombTime;
             bombModels = newBombModel;
         }
     }
     /**
      *
-     * @param {开始播放的时间} playTime
-     * @param {*cell位置} pos
-     * @param {*第几次消除，用于播放音效} step
+     * @param {setStartXY} playTime 开始播放的时间
+     * @param {cc.Vec2} pos cell位置
+     * @param {number} step 第几次消除，用于播放音效
      */
     addCrushEffect(playTime: number, pos: cc.Vec2, step: number) {
         this.effectsQueue.push({
@@ -497,7 +520,7 @@ export default class GameModel {
 
     // cell消除逻辑
     crushCell(x: number, y: number, needShake: boolean, step: number) {
-        let model = this.cells[y][x];
+        let model = this._cells[y][x];
         this.pushToChangeModels(model);
         if (needShake) {
             model.toShake(this.curTime);
@@ -510,6 +533,6 @@ export default class GameModel {
             cc.v2(model.x, model.y),
             step
         );
-        this.cells[y][x] = null;
+        this._cells[y][x] = null;
     }
 }

@@ -1,24 +1,49 @@
 const { ccclass, property } = cc._decorator;
 
+namespace gg{
+    /**
+     * 提取一些方法
+     */
+    export class Script extends cc.Component{
+        getChildButton(name: string):cc.Button{
+            return this.getChildComponent(name, cc.Button)
+        }
+    
+        getChildProgressBar(name: string): cc.ProgressBar{
+            return this.getChildComponent(name,cc.ProgressBar)
+        }
+    
+        getChildComponent<T extends cc.Component>(name:string, type: {prototype: T}): T{
+            return this.getChild(name)?.getComponent(type)
+        }
+    
+        getChild(name:string):cc.Node{
+            return this.node.getChildByName(name)
+        }
+    }
+}
+
 @ccclass
-export default class extends cc.Component {
-    @property(cc.ProgressBar)
-    private loadingBar: cc.ProgressBar = null;
-    @property(cc.Button)
-    private loginButton: cc.Button = null;
+export default class extends gg.Script {
     @property(cc.AudioClip)
     private worldSceneBGM: cc.AudioClip = null;
 
     private gameSceneBGMAudioId: number = 0;
+    private loginButton: cc.Node = null;
+    private loadingBar: cc.ProgressBar = null;
 
     onLoad() {
         this.gameSceneBGMAudioId = cc.audioEngine.play(this.worldSceneBGM, true, 1);
+        this.loadingBar = this.getChildProgressBar('loadingProgress')
+        
+        this.loginButton = this.getChild('loginButton')
+        this.loginButton.on(cc.Node.EventType.TOUCH_END,()=>this.onLogin())
     }
 
     onLogin() {
         this.loadingBar.node.active = true;
-        this.loginButton.node.active = false;
         this.loadingBar.progress = 0;
+        this.loginButton.active = false;
 
         const sceneName = 'Game'
         cc.director.preloadScene(
@@ -28,13 +53,10 @@ export default class extends cc.Component {
                 this.loadingBar.progress = (percent > this.loadingBar.progress) ? percent : this.loadingBar.progress
             },
             (err: Error) => {
-                if (!err) {
-                    this.loadingBar.node.active = false;
-                    cc.director.loadScene(sceneName);
-                    return
-                }
+                if (err) return cc.log(`failed to loadScene: ${err.message}`);
 
-                console.log(`failed to loadScene: ${err.message}`);
+                this.loadingBar.node.active = false;
+                cc.director.loadScene(sceneName);
             }
         );
     }

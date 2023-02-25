@@ -6,9 +6,9 @@ export default class CellModel {
     public isDeath = false;
     public startX: number = 1;
     public startY: number = 1;
-    public x: number = 1;
+    public x: number = 1; // 在数组中的位置
     public y: number = 1;
-    public type = 0;
+    public type = 0; // 动物类型
     public status = '';
 
     constructor() {
@@ -26,6 +26,7 @@ export default class CellModel {
     setEmpty() {
         this.type = CELL_TYPE.EMPTY;
     }
+
     setXY(x: number, y: number) {
         this.x = x;
         this.y = y;
