@@ -31,6 +31,7 @@ export default class extends gg.Script {
     private gameSceneBGMAudioId: number = 0;
     private loginButton: cc.Node = null;
     private loadingBar: cc.ProgressBar = null;
+    private _audio: cc.AudioSource
 
     onLoad() {
         this.gameSceneBGMAudioId = cc.audioEngine.play(this.worldSceneBGM, true, 1);
@@ -38,6 +39,8 @@ export default class extends gg.Script {
         
         this.loginButton = this.getChild('loginButton')
         this.loginButton.on(cc.Node.EventType.TOUCH_END,()=>this.onLogin())
+
+        this._audio = this.node.getComponent(cc.AudioSource)
     }
 
     onLogin() {

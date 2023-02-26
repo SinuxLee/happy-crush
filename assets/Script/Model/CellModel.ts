@@ -9,7 +9,7 @@ export default class CellModel {
     public x: number = 1; // 在数组中的位置
     public y: number = 1;
     public type = 0; // 动物类型
-    public status = '';
+    public status = ''; // 动画形态
 
     constructor() {
         this.status = CELL_STATUS.COMMON;

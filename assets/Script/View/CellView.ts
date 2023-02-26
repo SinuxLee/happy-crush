@@ -34,9 +34,7 @@ export default class extends cc.Component {
     // 执行移动动作
     updateView() {
         let cmd = this.model.cmd;
-        if (cmd.length <= 0) {
-            return;
-        }
+        if (cmd.length <= 0) return;
 
         const actionArray: cc.FiniteTimeAction[] = [];
         let curTime = 0;

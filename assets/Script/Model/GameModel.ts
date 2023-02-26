@@ -13,7 +13,7 @@ export default class GameModel {
     private readonly _rowPin = [cc.v2(1, 0),cc.v2(-1, 0)]
     private readonly _colPin = [cc.v2(0, -1),cc.v2(0, 1)]
 
-    private _cells: CellModel[][] = null;
+    private _cells: CellModel[][] = [null];
     private lastPos: cc.Vec2 = cc.v2(-1, -1);
     private cellTypeNum: number = 0; // 动物种类总数
     private cellCreateType = []; // 生成种类只在这个数组里面查找
@@ -28,51 +28,34 @@ export default class GameModel {
     constructor(cellTypeNum: number = 3) {
         if(cellTypeNum < 3) cellTypeNum = 3;
 
-        this._cells = [];
         this.setCellTypeNum(cellTypeNum);
-        for (let i = 1; i <= GRID_COL; i++) {
-            this._cells[i] = [];
-            for (let j = 1; j <= GRID_ROW; j++) {
-                this._cells[i][j] = new CellModel();
+        for (let i = 1; i <= GRID_ROW; i++) {
+            const row: CellModel[] = [null]
+            this._cells.push(row)
+            for (let j = 1; j <= GRID_COL; j++) {
+                row.push(new CellModel())
             }
         }
 
-        for (let i = 1; i <= GRID_COL; i++) {
-            for (let j = 1; j <= GRID_ROW; j++) {
-                // 已经被mock数据生成了
-                if (this._cells[i][j].type > 0) continue;
+        for (let i = 1; i <= GRID_ROW; i++) {
+            for (let j = 1; j <= GRID_COL; j++) {
+                const cell = this._cells[i][j]
+                if (cell.type > 0) continue;
 
-                let flag = false;
-                do{
-                    this._cells[i][j].init(this.getRandomCellType());
+                while(true){
+                    cell.init(this.getRandomCellType());
+                    cell.setXY(j, i);
+                    cell.setStartXY(j, i);
+
                     let result = this.checkPoint(j, i)[0];
-                    flag = (result.length > 2);
-                    this._cells[i][j].setXY(j, i);
-                    this._cells[i][j].setStartXY(j, i);
-                }while(flag)
+                    if(result.length <= 2) break; // 大于 2 说明开局就有合并/消除
+                }
             }
         }
-    }
-
-    mock() {
-        this.mockInit(5, 1, CELL_TYPE.A);
-        this.mockInit(5, 3, CELL_TYPE.A);
-        this.mockInit(4, 2, CELL_TYPE.A);
-        this.mockInit(3, 2, CELL_TYPE.A);
-        this.mockInit(5, 2, CELL_TYPE.B);
-        this.mockInit(6, 2, CELL_TYPE.B);
-        this.mockInit(7, 3, CELL_TYPE.B);
-        this.mockInit(8, 2, CELL_TYPE.A);
-    }
-
-    mockInit(x:number, y:number, type:number) {
-        this._cells[x][y].init(type);
-        this._cells[x][y].setXY(y, x);
-        this._cells[x][y].setStartXY(y, x);
     }
 
     /**
-     *
+     * 检查当前点合并/消除后的形态
      * @param x
      * @param y
      * @param recursive 是否递归查找
@@ -106,8 +89,8 @@ export default class GameModel {
         }
 
         let result: [cc.Vec2[], string, number, cc.Vec2] = [
-            samePoints,
-            newCellStatus,
+            samePoints,    // 可以被消除/合并的节点
+            newCellStatus, // 当前节点新状态
             this._cells[y][x].type,
             cc.v2(x, y),
         ];
@@ -392,7 +375,7 @@ export default class GameModel {
         }
     }
 
-    // 随要生成一个类型
+    // 随机生成一个类型
     getRandomCellType() {
         let index = Math.floor(Math.random() * this.cellTypeNum);
         return this.cellCreateType[index];
